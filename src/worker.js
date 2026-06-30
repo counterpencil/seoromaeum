@@ -96,8 +96,13 @@ export default {
 
       // RAG: analyze/solve 단계에서 유사 시나리오 검색
       let ragContext = "";
+      const lastMsg = (messages || []).slice(-1)[0]?.content || "";
+      
+      // 언어 감지: 영어 질문이면 응답도 영어로
+      const isEnglish = /^[a-zA-Z0-9\s?.,!'"]+$/.test(lastMsg.replace(/\s/g, '').slice(0, 30));
+      const langHint = isEnglish ? "\n중요: 응답을 영어로 작성하세요." : "";
+      
       if (stage === "analyze" || stage === "solve") {
-        const lastMsg = (messages || []).slice(-1)[0]?.content || "";
         const scenarios = searchScenarios(lastMsg);
         if (scenarios.length > 0) {
           ragContext = "\n\n참고할 유사 상담 사례:\n" + scenarios.map((s, i) =>
@@ -109,7 +114,7 @@ export default {
         model: "deepseek-chat",
         temperature: stage === "intake" || stage === "assess" ? 0.4 : 0.6,
         messages: [
-          { role: "system", content: prompt + ragContext },
+          { role: "system", content: prompt + langHint + ragContext },
           ...(messages || []),
         ],
         stream: true,
