@@ -8,7 +8,7 @@
 :root { --bg:#faf8f5; --text:#2c2c2c; --sub:#8c8c8c; --pri:#5b6e8a; --b-user:#f0ebe3; --b-ai:#fff; --border:#e8e4df; --radius:18px; }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color:var(--text); height:100dvh; display:flex; justify-content:center; align-items:center; }
-.app { width:100%; max-width:480px; height:100dvh; background:#fff; display:flex; flex-direction:column; }
+.app { width:100%; max-width:480px; height:100dvh; background:#fff; display:flex; flex-direction:column; position:relative; }
 .header { padding:16px 20px 12px; border-bottom:1px solid var(--border); text-align:center; }
 .header h1 { font-size:20px; font-weight:600; color:var(--pri); }
 .header p { font-size:12px; color:var(--sub); margin-top:2px; }
@@ -28,7 +28,6 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
 .bubble.assistant { align-self:flex-start; background:var(--b-ai); border:1px solid var(--border); border-bottom-left-radius:6px; }
 .bubble h3 { font-size:15px; margin:12px 0 6px; color:var(--pri); }
 .bubble h3:first-child { margin-top:0; }
-.bubble p { margin:4px 0; }
 .bubble ul { margin:6px 0; padding-left:20px; }
 .bubble li { margin:3px 0; }
 .typing { align-self:flex-start; font-size:13px; color:var(--sub); padding:8px 16px; }
@@ -39,20 +38,19 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
 .input-area button:disabled { opacity:.4; }
 .done-banner { text-align:center; padding:16px; color:var(--sub); font-size:13px; }
 .privacy-note { text-align:center; padding:16px; color:var(--sub); font-size:11px; }
+.scroll-btn { position:absolute; bottom:80px; right:20px; width:40px; height:40px; border-radius:50%; background:var(--pri); color:#fff; border:none; font-size:20px; cursor:pointer; display:none; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:10; }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="test-banner">⚠️ 현재 테스트 중인 사이트입니다</div>
   <div class="header"><h1>서로마음</h1><p>부모와 아이, 서로의 마음을 보다</p></div>
-
   <div class="role-screen" id="roleScreen">
     <div class="privacy-note">비공개 · 안전한 상담</div>
     <h2>누구의 고민인가요?</h2>
     <button class="role-btn" onclick="start('parent')"><div class="label">👨‍👩‍👧 부모로서 아이가 고민이에요</div><div class="desc">아이의 행동, 관계에 대한 조언</div></button>
     <button class="role-btn" onclick="start('child')"><div class="label">🧒 자녀로서 부모님이 고민이에요</div><div class="desc">부모님과의 갈등, 소통 방법</div></button>
   </div>
-
   <div class="chat-screen hidden" id="chatScreen">
     <div class="messages" id="messages"></div>
     <div class="input-area" id="inputArea">
@@ -60,53 +58,49 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
       <button onclick="send()" id="sendBtn">↑</button>
     </div>
   </div>
+  <button class="scroll-btn" id="scrollBtn" onclick="scrollToBottom()">↓</button>
 </div>
 
 <script>
 const API = 'https://seoromaeum.counterpencil.workers.dev/chat';
-let speaker = '';
-let msgHistory = [];
-let streamingBubble = null;
+let speaker = '', msgHistory = [], streamingBubble = null, autoScroll = true;
+const msgEl = document.getElementById('messages');
+
+msgEl.addEventListener('scroll', () => {
+  const atBot = msgEl.scrollHeight - msgEl.scrollTop - msgEl.clientHeight < 60;
+  autoScroll = atBot;
+  document.getElementById('scrollBtn').style.display = atBot ? 'none' : 'block';
+});
+
+function scrollToBottom() {
+  autoScroll = true;
+  msgEl.scrollTop = msgEl.scrollHeight;
+  document.getElementById('scrollBtn').style.display = 'none';
+}
 
 function start(role) {
   speaker = role;
   document.getElementById('roleScreen').classList.add('hidden');
   document.getElementById('chatScreen').classList.remove('hidden');
-  const prompt = role === 'parent'
-    ? '아이의 어떤 점이 고민이신가요? 편하게 말씀해주세요.'
-    : '부모님과 어떤 일로 힘드신가요? 편하게 말씀해주세요.';
-  addBubble('assistant', prompt);
+  addBubble('assistant', role === 'parent' ? '아이의 어떤 점이 고민이신가요?' : '부모님과 어떤 일로 힘드신가요?');
   document.getElementById('userInput').focus();
-}
-
-function md2html(text) {
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^### (.+)$/gm,'<h4>$1</h4>')
-    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
-    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
-    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-    .replace(/\n\n/g,'<br><br>')
-    .replace(/\n/g,'<br>');
 }
 
 function addBubble(role, text) {
   const d = document.createElement('div');
   d.className = 'bubble ' + role;
   d.innerHTML = md2html(text);
-  document.getElementById('messages').appendChild(d);
-  document.getElementById('messages').scrollTop = 99999;
+  msgEl.appendChild(d);
+  if (autoScroll) msgEl.scrollTop = msgEl.scrollHeight;
   return d;
 }
 
-function createStreamingBubble() {
-  const d = document.createElement('div');
-  d.className = 'bubble assistant';
-  d.innerHTML = '';
-  document.getElementById('messages').appendChild(d);
-  return d;
+function md2html(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
 }
 
 async function send() {
@@ -117,55 +111,33 @@ async function send() {
   document.getElementById('sendBtn').disabled = true;
   addBubble('user', text);
   msgHistory.push({ role: 'user', content: text });
-
-  // create streaming bubble
-  streamingBubble = createStreamingBubble();
+  streamingBubble = document.createElement('div');
+  streamingBubble.className = 'bubble assistant';
+  msgEl.appendChild(streamingBubble);
   let fullText = '';
-
   try {
-    const resp = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ speaker, messages: msgHistory, stream: true }),
-    });
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
+    const resp = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({speaker,messages:msgHistory,stream:true}) });
+    const reader = resp.body.getReader(), dec = new TextDecoder();
+    let buf = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const json = JSON.parse(data);
-          const delta = json.choices?.[0]?.delta?.content || '';
-          fullText += delta;
-          streamingBubble.innerHTML = md2html(fullText);
-          document.getElementById('messages').scrollTop = 99999;
-        } catch {}
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n'); buf = lines.pop()||'';
+      for (const l of lines) {
+        if (!l.startsWith('data: ')) continue;
+        if (l === 'data: [DONE]') continue;
+        try { fullText += JSON.parse(l.slice(6)).choices?.[0]?.delta?.content||''; } catch {}
       }
+      streamingBubble.innerHTML = md2html(fullText);
+      if (autoScroll) msgEl.scrollTop = msgEl.scrollHeight;
+      else document.getElementById('scrollBtn').style.display = 'block';
     }
-
-    // final render
     streamingBubble.innerHTML = md2html(fullText);
     msgHistory.push({ role: 'assistant', content: fullText });
-
-  } catch (e) {
-    streamingBubble.innerHTML = '오류가 발생했습니다. 다시 시도해주세요.';
-  }
-
+  } catch(e) { streamingBubble.innerHTML = '오류.'; }
   streamingBubble = null;
-  input.disabled = false;
-  document.getElementById('sendBtn').disabled = false;
+  input.disabled = false; document.getElementById('sendBtn').disabled = false;
   input.focus();
 }
 </script>
