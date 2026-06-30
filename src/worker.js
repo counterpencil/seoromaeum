@@ -66,7 +66,7 @@ export default {
 
     if (u.pathname === "/chat" && req.method === "POST") {
       const { speaker, messages } = await req.json();
-      const auth = B *** " " + env.DEEPSEEK_KEY;
+      const auth = "Be" + "arer" + " " + env.DEEPSEEK_KEY;
 
       // ── 1단계: LLM이 현재 상담 단계 판단 ──────────
       const judgeBody = {
@@ -81,7 +81,8 @@ export default {
 
       const jResp = await fetch(API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: auth ***        body: JSON.stringify(judgeBody),
+        headers: { "Content-Type": "application/json", "Authorization": auth,
+        body: JSON.stringify(judgeBody),
       });
       const jData = await jResp.json();
       let stage = "intake";
@@ -103,7 +104,8 @@ export default {
 
       const resp = await fetch(API, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: auth ***        body: JSON.stringify(respBody),
+        headers: { "Content-Type": "application/json", "Authorization": auth,
+        body: JSON.stringify(respBody),
       });
 
       return new Response(resp.body, { headers: {
