@@ -69,15 +69,16 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
     <button class="btn" onclick="setRole('child')"><div class="label" data-i18n="roleChild">🧒 자녀로서 부모님이 고민이에요</div><div class="desc" data-i18n="roleChildDesc">부모님과의 갈등, 소통 방법</div></button>
   </div>
 
-  <!-- Screen 2: Profile -->
+  <!-- Screen 2: Profile (optional) -->
   <div class="screen hidden" id="screenProfile">
-    <h2>조금만 더 알려주세요</h2>
+    <h2>조금만 더 알려주세요 <span style="color:var(--sub);font-size:13px;">(선택)</span></h2>
     <p style="color:var(--sub);font-size:13px;text-align:center;">더 정확한 맞춤 조언을 드릴 수 있어요</p>
     <div class="input-row"><input id="profName" placeholder="이름 또는 별명 (예: 지훈이)"></div>
     <div class="input-row"><input id="profAge" placeholder="나이 (예: 9살)" type="text"></div>
     <p style="font-size:13px;color:var(--sub);margin-top:8px;">성향은 어떤가요?</p>
     <div class="tag-row" id="tagTemperament"></div>
-    <button class="btn" onclick="startChat()" style="text-align:center;margin-top:12px;">✨ 맞춤 상담 시작하기</button>
+    <button class="btn" onclick="startChat()" style="text-align:center;margin-top:8px;">✨ 맞춤 상담 시작하기</button>
+    <button class="btn" onclick="skipProfile()" style="text-align:center;background:var(--bg);border-color:transparent;color:var(--sub);margin-top:0;">건너뛰기</button>
     <p class="privacy-note">모든 정보는 기기에만 저장됩니다</p>
   </div>
 
@@ -141,10 +142,15 @@ function setRole(role) {
 function startChat() {
   profile.name = document.getElementById('profName').value.trim();
   profile.age = document.getElementById('profAge').value.trim();
-  if (!profile.name && !profile.age) {
-    // skip profile if empty - use defaults
-    profile = {};
-  }
+  goToChat();
+}
+
+function skipProfile() {
+  profile = {};
+  goToChat();
+}
+
+function goToChat() {
   document.getElementById('screenProfile').classList.add('hidden');
   document.getElementById('screenChat').classList.remove('hidden');
   const prompt = speaker === 'parent' ? t('parentPrompt') : t('childPrompt');
