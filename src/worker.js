@@ -66,8 +66,18 @@ export default {
     }
 
     if (u.pathname === "/chat" && req.method === "POST") {
-      const { speaker, messages } = await req.json();
+      const { speaker, messages, profile } = await req.json();
       const auth = "Be" + "arer" + " " + env.DEEPSEEK_KEY;
+
+      // ── 프로필 컨텍스트 생성 ────────────────────
+      let profileHint = "";
+      if (profile && (profile.name || profile.age || profile.temperament)) {
+        profileHint = `\n[사용자 프로필]`;
+        if (profile.name) profileHint += `\n대상: ${profile.name}`;
+        if (profile.age) profileHint += `\n나이: ${profile.age}`;
+        if (profile.temperament?.length) profileHint += `\n성향: ${profile.temperament.join(', ')}`;
+        profileHint += `\n반드시 이 프로필을 반영하여 구체적인 대사를 제시하세요. 예: "${profile.name||'아이'}에게 이렇게 말해보세요: ..."`;
+      }
 
       // ── 1단계: LLM이 현재 상담 단계 판단 ──────────
       const judgeBody = {
@@ -114,7 +124,7 @@ export default {
         model: "deepseek-chat",
         temperature: stage === "intake" || stage === "assess" ? 0.4 : 0.6,
         messages: [
-          { role: "system", content: prompt + langHint + ragContext },
+          { role: "system", content: prompt + profileHint + langHint + ragContext },
           ...(messages || []),
         ],
         stream: true,
