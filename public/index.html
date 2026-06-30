@@ -55,25 +55,25 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
 </head>
 <body>
 <div class="app">
-  <div class="test-banner">⚠️ 현재 테스트 중인 사이트입니다</div>
-  <div class="header"><h1>서로마음</h1><p>부모와 아이, 서로의 마음을 보다</p></div>
+  <div class="test-banner" data-i18n="testBanner">⚠️ 현재 테스트 중인 사이트입니다</div>
+  <div class="header"><h1 data-i18n="title">서로마음</h1><p data-i18n="subtitle">부모와 아이, 서로의 마음을 보다</p></div>
 
   <div class="role-screen" id="roleScreen">
-    <div class="privacy-note">비공개 · 안전한 상담</div>
-    <h2>누구의 고민인가요?</h2>
-    <button class="role-btn" onclick="start('parent')"><div class="label">👨‍👩‍👧 부모로서 아이가 고민이에요</div><div class="desc">아이의 행동, 관계에 대한 조언</div></button>
-    <button class="role-btn" onclick="start('child')"><div class="label">🧒 자녀로서 부모님이 고민이에요</div><div class="desc">부모님과의 갈등, 소통 방법</div></button>
-    <div class="disclaimer">⚠️ AI가 생성한 답변은 참고용이며, 전문 심리상담을 대체하지 않습니다.<br>심각한 상황이라면 반드시 전문가와 상담하세요.</div>
+    <div class="privacy-note" data-i18n="privacy">비공개 · 안전한 상담</div>
+    <h2 data-i18n="roleTitle">누구의 고민인가요?</h2>
+    <button class="role-btn" onclick="start('parent')"><div class="label" data-i18n="roleParent">👨‍👩‍👧 부모로서 아이가 고민이에요</div><div class="desc" data-i18n="roleParentDesc">아이의 행동, 관계에 대한 조언</div></button>
+    <button class="role-btn" onclick="start('child')"><div class="label" data-i18n="roleChild">🧒 자녀로서 부모님이 고민이에요</div><div class="desc" data-i18n="roleChildDesc">부모님과의 갈등, 소통 방법</div></button>
+    <div class="disclaimer"><span data-i18n="disclaimer1">⚠️ AI가 생성한 답변은 참고용이며, 전문 심리상담을 대체하지 않습니다.</span><br><span data-i18n="disclaimer2">심각한 상황이라면 반드시 전문가와 상담하세요.</span></div>
   </div>
 
   <div class="chat-screen hidden" id="chatScreen">
     <div class="ad-banner ad-top"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8622280233702760" data-ad-slot="1111111111" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
     <div class="messages" id="messages"></div>
     <div class="input-area" id="inputArea">
-      <input id="userInput" placeholder="메시지를 입력하세요…" onkeydown="if(event.key==='Enter')send()">
+      <input id="userInput" data-i18n="placeholder" placeholder="메시지를 입력하세요…" onkeydown="if(event.key==='Enter')send()">
       <button onclick="send()" id="sendBtn">↑</button>
     </div>
-    <div class="disclaimer">AI 상담사가 실수할 수 있습니다. 참고용으로만 활용하세요.</div>
+    <div class="disclaimer" data-i18n="disclaimerChat">AI 상담사가 실수할 수 있습니다. 참고용으로만 활용하세요.</div>
   </div>
   <button class="scroll-btn" id="scrollBtn" onclick="scrollToBottom()">↓</button>
 </div>
@@ -82,6 +82,61 @@ body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color
 const API = 'https://seoromaeum.counterpencil.workers.dev/chat';
 let speaker = '', msgHistory = [], streamingBubble = null, autoScroll = true;
 const msgEl = document.getElementById('messages');
+
+// ── i18n ────────────────────────────────────────────
+const i18n = {
+  ko: {
+    title: '서로마음', subtitle: '부모와 아이, 서로의 마음을 보다',
+    testBanner: '⚠️ 현재 테스트 중인 사이트입니다',
+    privacy: '비공개 · 안전한 상담',
+    roleTitle: '누구의 고민인가요?',
+    roleParent: '부모로서 아이가 고민이에요',
+    roleParentDesc: '아이의 행동, 관계에 대한 조언',
+    roleChild: '자녀로서 부모님이 고민이에요',
+    roleChildDesc: '부모님과의 갈등, 소통 방법',
+    parentPrompt: '아이의 어떤 점이 고민이신가요? 편하게 말씀해주세요.',
+    childPrompt: '부모님과 어떤 일로 힘드신가요? 편하게 말씀해주세요.',
+    placeholder: '메시지를 입력하세요…',
+    disclaimer1: '⚠️ AI가 생성한 답변은 참고용이며, 전문 심리상담을 대체하지 않습니다.',
+    disclaimer2: '심각한 상황이라면 반드시 전문가와 상담하세요.',
+    disclaimerChat: 'AI 상담사가 실수할 수 있습니다. 참고용으로만 활용하세요.',
+    doneBanner: '상담이 완료되었습니다. 새로고침 후 다시 이용해주세요.',
+    error: '오류가 발생했습니다. 다시 시도해주세요.',
+  },
+  en: {
+    title: 'Seoromaeum', subtitle: 'Parent and child, seeing each other\'s hearts',
+    testBanner: '⚠️ Test site — under development',
+    privacy: 'Private · Secure counseling',
+    roleTitle: 'Whose concern is it?',
+    roleParent: 'I\'m a parent worried about my child',
+    roleParentDesc: 'Advice on child behavior and relationships',
+    roleChild: 'I\'m a child worried about my parent',
+    roleChildDesc: 'Help with parent conflict and communication',
+    parentPrompt: 'What concerns you about your child? Feel free to share.',
+    childPrompt: 'What\'s troubling you about your parent? Feel free to share.',
+    placeholder: 'Type a message…',
+    disclaimer1: '⚠️ AI-generated responses are for reference only and do not replace professional counseling.',
+    disclaimer2: 'If the situation is serious, please consult a professional.',
+    disclaimerChat: 'AI can make mistakes. Use for reference only.',
+    doneBanner: 'Session complete. Refresh to start a new session.',
+    error: 'An error occurred. Please try again.',
+  },
+};
+
+function t(key) {
+  const lang = (navigator.language || 'ko').split('-')[0];
+  const dict = i18n[lang] || i18n.en;
+  return dict[key] || i18n.en[key] || key;
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (el.tagName === 'INPUT') el.placeholder = t(key);
+    else el.textContent = t(key);
+  });
+}
+window.addEventListener('DOMContentLoaded', applyI18n);
 
 msgEl.addEventListener('scroll', () => {
   const atBot = msgEl.scrollHeight - msgEl.scrollTop - msgEl.clientHeight < 60;
@@ -104,7 +159,7 @@ function start(role) {
   speaker = role;
   document.getElementById('roleScreen').classList.add('hidden');
   document.getElementById('chatScreen').classList.remove('hidden');
-  addBubble('assistant', role === 'parent' ? '아이의 어떤 점이 고민이신가요?' : '부모님과 어떤 일로 힘드신가요?');
+  addBubble('assistant', role === 'parent' ? t('parentPrompt') : t('childPrompt'));
   document.getElementById('userInput').focus();
   setTimeout(initAds, 100);
 }
