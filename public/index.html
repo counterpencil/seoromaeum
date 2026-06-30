@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>서로마음</title>
+<style>
+:root { --bg:#faf8f5; --text:#2c2c2c; --sub:#8c8c8c; --pri:#5b6e8a; --b-user:#f0ebe3; --b-ai:#fff; --border:#e8e4df; --radius:18px; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Apple SD Gothic Neo',sans-serif; background:var(--bg); color:var(--text); height:100dvh; display:flex; justify-content:center; align-items:center; }
+.app { width:100%; max-width:480px; height:100dvh; background:#fff; display:flex; flex-direction:column; }
+.header { padding:16px 20px 12px; border-bottom:1px solid var(--border); text-align:center; }
+.header h1 { font-size:20px; font-weight:600; color:var(--pri); }
+.header p { font-size:12px; color:var(--sub); margin-top:2px; }
+.role-screen, .chat-screen { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.role-screen { padding:40px 24px; justify-content:center; gap:20px; }
+.role-screen h2 { font-size:18px; font-weight:500; text-align:center; }
+.role-btn { width:100%; padding:18px; border:2px solid var(--border); border-radius:var(--radius); background:#fff; font-size:15px; cursor:pointer; text-align:left; transition:all .2s; }
+.role-btn:hover { border-color:var(--pri); background:#e8ecf1; }
+.role-btn .label { font-weight:600; }
+.role-btn .desc { font-size:13px; color:var(--sub); margin-top:4px; }
+.hidden { display:none !important; }
+.messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.bubble { max-width:85%; padding:12px 16px; border-radius:var(--radius); font-size:14px; line-height:1.55; white-space:pre-wrap; word-break:break-word; animation:fadeIn .3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.bubble.user { align-self:flex-end; background:var(--b-user); border-bottom-right-radius:6px; }
+.bubble.assistant { align-self:flex-start; background:var(--b-ai); border:1px solid var(--border); border-bottom-left-radius:6px; }
+.typing { align-self:flex-start; font-size:13px; color:var(--sub); padding:8px 16px; }
+.input-area { padding:12px 16px 20px; border-top:1px solid var(--border); display:flex; gap:8px; }
+.input-area input { flex:1; padding:12px 16px; border:1px solid var(--border); border-radius:24px; font-size:14px; outline:none; background:var(--bg); }
+.input-area input:focus { border-color:var(--pri); }
+.input-area button { width:44px; height:44px; border-radius:50%; border:none; background:var(--pri); color:#fff; font-size:18px; cursor:pointer; flex-shrink:0; }
+.input-area button:disabled { opacity:.4; }
+.done-banner { text-align:center; padding:16px; color:var(--sub); font-size:13px; }
+.privacy-note { text-align:center; padding:16px; color:var(--sub); font-size:11px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header"><h1>서로마음</h1><p>부모와 아이, 서로의 마음을 보다</p></div>
+
+  <div class="role-screen" id="roleScreen">
+    <div class="privacy-note">비공개 · 안전한 상담</div>
+    <h2>누구의 고민인가요?</h2>
+    <button class="role-btn" onclick="start('parent')"><div class="label">👨‍👩‍👧 부모로서 아이가 고민이에요</div><div class="desc">아이의 행동, 관계에 대한 조언</div></button>
+    <button class="role-btn" onclick="start('child')"><div class="label">🧒 자녀로서 부모님이 고민이에요</div><div class="desc">부모님과의 갈등, 소통 방법</div></button>
+  </div>
+
+  <div class="chat-screen hidden" id="chatScreen">
+    <div class="messages" id="messages"></div>
+    <div class="input-area" id="inputArea">
+      <input id="userInput" placeholder="메시지를 입력하세요…" onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()" id="sendBtn">↑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let speaker = '';
+let msgHistory = [];
+
+function start(role) {
+  speaker = role;
+  document.getElementById('roleScreen').classList.add('hidden');
+  document.getElementById('chatScreen').classList.remove('hidden');
+  const prompt = role === 'parent'
+    ? '아이의 어떤 점이 고민이신가요? 편하게 말씀해주세요.'
+    : '부모님과 어떤 일로 힘드신가요? 편하게 말씀해주세요.';
+  addBubble('assistant', prompt);
+  document.getElementById('userInput').focus();
+}
+
+function addBubble(role, text) {
+  const d = document.createElement('div');
+  d.className = 'bubble ' + role;
+  d.textContent = text;
+  document.getElementById('messages').appendChild(d);
+  document.getElementById('messages').scrollTop = 99999;
+}
+
+async function send() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+  addBubble('user', text);
+  msgHistory.push({ role: 'user', content: text });
+
+  const typing = document.createElement('div');
+  typing.className = 'typing'; typing.textContent = '입력 중...';
+  document.getElementById('messages').appendChild(typing);
+
+  try {
+    const resp = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speaker, messages: msgHistory }),
+    });
+    const data = await resp.json();
+    typing.remove();
+
+    const msg = data.message || '(응답 없음)';
+    addBubble('assistant', msg);
+    msgHistory.push({ role: 'assistant', content: msg });
+
+    if (data.stage === 'closing' || data.next_stage === 'end') {
+      document.getElementById('inputArea').innerHTML =
+        '<div class="done-banner">상담이 완료되었습니다.<br>새로고침 후 다시 이용해주세요.</div>';
+    }
+  } catch (e) {
+    typing.remove();
+    addBubble('assistant', '오류가 발생했습니다. 다시 시도해주세요.');
+  }
+
+  input.disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>

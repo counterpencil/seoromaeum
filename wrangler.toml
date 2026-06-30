@@ -1,0 +1,15 @@
+name = "seoromaeum"
+main = "src/worker.js"
+compatibility_date = "2025-06-30"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "seoromaeum-logs"
+database_id = ""
+
+[vars]
+# DeepSeek API Key — wrangler secret put DEEPSEEK_KEY 으로 설정
+# DEEPSEEK_KEY = ""
+
+[env.production]
+route = "seoromaeum.com/*"
