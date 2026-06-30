@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>서로마음</title>
+<title data-i18n="title">서로마음</title>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8622280233702760" crossorigin="anonymous"></script>
 <script async src="https://fundingchoicesmessages.google.com/i/pub-8622280233702760?ers=1" nonce="x"></script><script nonce="x">(function(){function signalGooglefcPresent(){if(!window.frames.googlefcPresent){if(document.body){const f=document.createElement('iframe');f.style.display='none';f.style.width=0;f.style.height=0;f.style.border=0;f.src='https://fundingchoicesmessages.google.com/i/pub-8622280233702760?ers=2';document.body.appendChild(f)}else{setTimeout(signalGooglefcPresent,0)}}}signalGooglefcPresent()})();</script>
 <style>
@@ -135,6 +135,7 @@ function applyI18n() {
     if (el.tagName === 'INPUT') el.placeholder = t(key);
     else el.textContent = t(key);
   });
+  document.title = t('title');
 }
 window.addEventListener('DOMContentLoaded', applyI18n);
 
@@ -233,7 +234,7 @@ async function send() {
     msgHistory.push({ role: 'assistant', content: fullText });
   } catch(e) {
     hideTyping();
-    streamingBubble.innerHTML = '오류가 발생했습니다. 다시 시도해주세요.';
+    streamingBubble.innerHTML = t('error');
   }
 
   streamingBubble = null;
