@@ -45,10 +45,11 @@ const STAGE_PROMPTS = {
 ## 🏷 핵심 문제: "___ 갈등"`,
 
   solve: `당신은 '서로마음'의 상담사입니다. 구체적 해결책을 주세요.
+프로필이 있다면 이름을 반드시 넣어서 "지훈이에게 이렇게 말해보세요: ..." 형식으로 실제 대사를 제시하세요.
 ## ✅ 지금 당장 할 수 있는 것 (3~4개, 실제 대사 예시 포함)
 ## 📅 일주일 동안 시도할 것 (1~2개)
 ## 💆 나를 돌보는 방법 (1개)
-추상적 조언 금지. "이렇게 말해보세요: ___" 형식으로.`,
+추상적 조언 금지. 구체적인 말투와 행동을 제시하세요.`,
 
   close: `당신은 '서로마음'의 상담사입니다. 상담을 따뜻하게 마무리하세요.
 사용자의 용기와 솔직함에 감사하고, 충분히 잘하고 있다고 위로하세요.
@@ -71,12 +72,11 @@ export default {
 
       // ── 프로필 컨텍스트 생성 ────────────────────
       let profileHint = "";
-      if (profile && (profile.name || profile.age || profile.temperament)) {
-        profileHint = `\n[사용자 프로필]`;
-        if (profile.name) profileHint += `\n대상: ${profile.name}`;
-        if (profile.age) profileHint += `\n나이: ${profile.age}`;
-        if (profile.temperament?.length) profileHint += `\n성향: ${profile.temperament.join(', ')}`;
-        profileHint += `\n반드시 이 프로필을 반영하여 구체적인 대사를 제시하세요. 예: "${profile.name||'아이'}에게 이렇게 말해보세요: ..."`;
+      if (profile && (profile.name || profile.age || profile.temperament?.length)) {
+        const name = profile.name || "아이";
+        profileHint = `\n[프로필] ${name}`;
+        if (profile.age) profileHint += `, ${profile.age}`;
+        if (profile.temperament?.length) profileHint += `, ${profile.temperament.join(', ')}`;
       }
 
       // ── 1단계: LLM이 현재 상담 단계 판단 ──────────
