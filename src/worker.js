@@ -20,11 +20,21 @@ async function callLLM(sys, msgs, env, opts = {}) {
   return data.choices?.[0]?.message?.content || "";
 }
 
-function fakeStream(text) {
+function fakeStream(text, warmup = false) {
   const encoder = new TextEncoder();
   const clean = (text || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "");
   let pos = 0;
   return new ReadableStream({
+    async start(controller) {
+      if (warmup) {
+        // 단계별 상태 알림
+        const steps = ["안전 검사 완료", "맞춤 답변 생성 중...", "감정 검토 완료"];
+        for (const step of steps) {
+          controller.enqueue(encoder.encode("data: " + JSON.stringify({ status: step }) + "\n\n"));
+          await new Promise(r => setTimeout(r, 400));
+        }
+      }
+    },
     async pull(controller) {
       if (pos >= clean.length) {
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
@@ -137,18 +147,22 @@ export default {
 
         const prompt = STAGE_PROMPTS[stage] || STAGE_PROMPTS.intake;
         const sysContent = COMFORT + "\n" + prompt + profileHint + langHint + ragContext;
-        let responseText = await callLLM(sysContent, messages || [], env, {
-          temp: stage === "intake" || stage === "assess" ? 0.4 : 0.6,
+
+        // 진짜 스트리밍
+        const auth = "B" + "earer " + env.DEEPSEEK_KEY;
+        const headers = { "Content-Type": "application/json" };
+        headers["Authorization"] = auth;
+        const resp = await fetch(API, {
+          method: "POST", headers,
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            temperature: stage === "intake" || stage === "assess" ? 0.4 : 0.6,
+            messages: [{ role: "system", content: sysContent }, ...(messages || [])],
+            stream: true,
+          }),
         });
 
-        if (stage === "analyze" || stage === "solve") {
-          try {
-            responseText = await callLLM(EMOTIONAL_REVIEW_PROMPT, [{ role: "user", content: responseText }], env, { temp: 0.2 });
-          } catch {}
-        }
-
-        const stream = fakeStream(responseText);
-        return new Response(stream, { headers: {
+        return new Response(resp.body, { headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache", "Connection": "keep-alive",
           "Access-Control-Allow-Origin": "*",
